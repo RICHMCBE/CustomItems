@@ -24,7 +24,8 @@ use pocketmine\entity\animation\ArmSwingAnimation;
 use pocketmine\item\Durable;
 use pocketmine\item\enchantment\VanillaEnchantments;
 
-trait CustomItemTrait{
+trait CustomItemTrait
+{
 
     use ItemComponentsTrait;
 
@@ -33,15 +34,17 @@ trait CustomItemTrait{
     private int $maxDurability = 100;
     protected int $miningEfficiency = 1;
 
-    protected function getAllDiggerComponent(DiggerComponent &$component, int $speed) : void{
-        foreach(VanillaBlocks::getAll() as $block){
+    protected function getAllDiggerComponent(DiggerComponent &$component, int $speed): void
+    {
+        foreach (VanillaBlocks::getAll() as $block) {
             $component->withBlocks($speed, $block);
         }
     }
 
-    protected function getTypedDiggerComponent(DiggerComponent &$component, int $speed) : void{
-        foreach(VanillaBlocks::getAll() as $block){
-            if($block->getBreakInfo()->getToolType() == $this->getBlockToolType()){
+    protected function getTypedDiggerComponent(DiggerComponent &$component, int $speed): void
+    {
+        foreach (VanillaBlocks::getAll() as $block) {
+            if ($block->getBreakInfo()->getToolType() == $this->getBlockToolType()) {
                 $component->withBlocks($speed, $block);
             }
         }
@@ -49,87 +52,101 @@ trait CustomItemTrait{
 
 
     /** @return ItemComponent[] */
-    protected function init(array $info) : array{
+    protected function init(array $info): array
+    {
         $components = [];
-        if(isset($info["off_hand"])){
+        if (isset($info["off_hand"])) {
             $components[] = new AllowOffHandComponent($info["off_hand"]);
         }
-        if(isset($info["armor_component"])){
+        if (isset($info["armor_component"])) {
             $components[] = new ArmorComponent($info["armor_component"]["protection"], $info["armor_component"]["texture_type"]);
         }
-        if(isset($info["block_placer"])){
+        if (isset($info["block_placer"])) {
             $components[] = new BlockPlacerComponent($info["block_placer"]["block_identifier"], $info["block_placer"]["use_block_description"] ?? false);
         }
-        if(isset($info["canDestroyInCreative"])){
+        if (isset($info["canDestroyInCreative"])) {
             $components[] = new CanDestroyInCreativeComponent($info["canDestroyInCreative"]);
         }
-        if(isset($info["chargeable"])){
+        if (isset($info["chargeable"])) {
             $components[] = new ChargeableComponent(floatval($info["chargeable"]));
         }
-        if(isset($info["cooldown"])){
+        if (isset($info["cooldown"])) {
             $components[] = new CooldownComponent($info["cooldown"]["category"], $info["cooldown"]["duration"]);
         }
-        if(isset($info["mining_efficiency"])){
+        if (isset($info["mining_efficiency"])) {
             $this->miningEfficiency = floatval($info["mining_efficiency"]);
         }
-        if(isset($info["max_durability"])){
+        if (isset($info["max_durability"])) {
             $maxDurability = $info["max_durability"];
-            if($maxDurability === "infinity"){
+            if ($maxDurability === "infinity") {
                 $this->setUnbreakable();
-            }else{
+            } else {
                 $this->maxDurability = $maxDurability;
                 $components[] = new DurabilityComponent($maxDurability);
             }
         }
-        if(isset($info["foil"])){
+        if (isset($info["foil"])) {
             $components[] = new FoilComponent($info["foil"]);
         }
-        if(isset($info["can_always_eat"])){
+        if (isset($info["can_always_eat"])) {
             $components[] = new FoodComponent($info["can_always_eat"]);
         }
-        if(isset($info["fuel"])){
+        if (isset($info["fuel"])) {
             $components[] = new FuelComponent(floatval($info["fuel"]));
         }
-        if(isset($info["interact_button"])){
+        if (isset($info["interact_button"])) {
             $components[] = new InteractButtonComponent($info["interact_button"]);
         }
-        if(isset($info["knockback_resistance"])){
+        if (isset($info["knockback_resistance"])) {
             $components[] = new KnockbackResistanceComponent($info["knockback_resistance"]);
         }
-        if(isset($info["max_stack_size"])){
+        if (isset($info["max_stack_size"])) {
             $this->maxStackSize = $info["max_stack_size"];
         }
-        if(isset($info["defense_point"])){
+        if (isset($info["defense_point"])) {
             $this->defensePoint = $info["defense_point"];
         }
         return $components;
     }
 
-    public function getMaxStackSize() : int{
+    public function getMaxStackSize(): int
+    {
         return $this->maxStackSize;
     }
 
-    public function getDefensePoints() : int{
+    public function getDefensePoints(): int
+    {
         return $this->defensePoint;
     }
 
-    public function getMaxDurability() : int{
+    public function getMaxDurability(): int
+    {
         return $this->maxDurability;
     }
 
-    public function getBaseMiningEfficiency() : float{
+    public function getBaseMiningEfficiency(): float
+    {
         return $this->miningEfficiency;
     }
 
-    public function getMiningEfficiency(bool $isCorrectTool): float{
-        if(!$isCorrectTool){
+    public function getMiningEfficiency(bool $isCorrectTool): float
+    {
+        if (!$isCorrectTool) {
             return 1;
         }
-        $efficiency = $this->miningEfficiency;
-        if(($enchantmentLevel = min(10, static::getEnchantmentLevel(VanillaEnchantments::EFFICIENCY()))) > 0){
-            $efficiency += ($enchantmentLevel ** 2 + 1);
+
+        $baseEfficiency = $this->miningEfficiency; // 기본 효율 (8)
+        $maxEfficiency = 25; // 최대 효율 제한
+        $maxEnchantmentLevel = 10; // 최대 마법 레벨
+
+        if (($enchantmentLevel = min($maxEnchantmentLevel, static::getEnchantmentLevel(VanillaEnchantments::EFFICIENCY()))) > 0) {
+            // 가중치를 조절하여 효율 비례 값 추가
+            $additionalEfficiency = ($enchantmentLevel / $maxEnchantmentLevel) * ($maxEfficiency - $baseEfficiency);
+            $efficiency = min($baseEfficiency + $additionalEfficiency, $maxEfficiency);
+        } else {
+            $efficiency = $baseEfficiency;
         }
+
         return $efficiency;
     }
-
 }
