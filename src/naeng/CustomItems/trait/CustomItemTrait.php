@@ -22,6 +22,7 @@ use pocketmine\block\VanillaBlocks;
 use pocketmine\entity\animation\Animation;
 use pocketmine\entity\animation\ArmSwingAnimation;
 use pocketmine\item\Durable;
+use pocketmine\item\enchantment\VanillaEnchantments;
 
 trait CustomItemTrait{
 
@@ -118,6 +119,17 @@ trait CustomItemTrait{
 
     public function getBaseMiningEfficiency() : float{
         return $this->miningEfficiency;
+    }
+
+    public function getMiningEfficiency(bool $isCorrectTool): float{
+        if(!$isCorrectTool){
+            return 1;
+        }
+        $efficiency = $this->miningEfficiency;
+        if(($enchantmentLevel = min(10, static::getEnchantmentLevel(VanillaEnchantments::EFFICIENCY()))) > 0){
+            $efficiency += ($enchantmentLevel ** 2 + 1);
+        }
+        return $efficiency;
     }
 
 }
